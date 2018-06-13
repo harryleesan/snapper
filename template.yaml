@@ -1,0 +1,19 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: My first serverless application.
+
+Resources:
+
+  Products:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 20
+      Handler: main
+      Runtime: go1.x
+      Events:
+        CreateSnapshot:
+          Type: Api
+          Properties:
+            Path: /create
+            Method: post
