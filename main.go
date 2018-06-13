@@ -76,6 +76,18 @@ func createSnapShot(nt string, v string, in string, vpc string) {
 
 }
 
+func aws_initiate() error {
+	var err error
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String("eu-west-1"),
+	})
+	if err != nil {
+		return err
+	}
+	ec2_svc = ec2.New(sess)
+	return nil
+}
+
 func start(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 
 	aws_err := aws_initiate()
@@ -96,18 +108,6 @@ func start(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 		StatusCode: 200,
 	}, aws_err
 
-}
-
-func aws_initiate() error {
-	var err error
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String("eu-west-1"),
-	})
-	if err != nil {
-		return err
-	}
-	ec2_svc = ec2.New(sess)
-	return nil
 }
 
 func main() {
