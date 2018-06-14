@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Snapper Go application to take snapshot of volumes.
+Resources:
+  Snapper:
+    Properties:
+      CodeUri: s3://vatit-lambdas/c07cbd1e8bd6aa0bf79e724b946e4336
+      Description: Takes snapshots of instance volumes.
+      Environment:
+        Variables:
+          OPTION: create
+      Events:
+        CreateSnapshot:
+          Properties:
+            Input: "{\n  \"option\": \"create\",\n  \"keep\": \"\"\n}\n"
+            Schedule: cron(0 2 ? * MON-FRI *)
+          Type: Schedule
+        DeleteSnapshot7Days:
+          Properties:
+            Input: "{\n  \"option\": \"delete\",\n  \"keep\": \"7\"\n}\n"
+            Schedule: cron(0 2 ? * MON-FRI *)
+          Type: Schedule
+      FunctionName: snapper-go
+      Handler: main
+      Role: arn:aws:iam::197094583576:role/snapper
+      Runtime: go1.x
+      Timeout: 15
+    Type: AWS::Serverless::Function
+Transform: AWS::Serverless-2016-10-31
