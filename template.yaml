@@ -7,12 +7,31 @@ Resources:
   Snapper:
     Type: AWS::Serverless::Function
     Properties:
-      Timeout: 20
+      Timeout: 15
       Handler: main
       Runtime: go1.x
+      FunctionName: snapper-go
+      Description: Takes snapshots of instance volumes.
+      Role: arn:aws:iam::197094583576:role/snapper
+      Environment:
+        Variables:
+          OPTION: create
       Events:
         CreateSnapshot:
-          Type: Api
+          Type: Schedule
           Properties:
-            Path: /create
-            Method: post
+            Schedule: cron(0 2 ? * MON-FRI *)
+            Input: |
+              {
+                "option": "create",
+                "keep": ""
+              }
+        DeleteSnapshot7Days:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 2 ? * MON-FRI *)
+            Input: |
+              {
+                "option": "delete",
+                "keep": "7"
+              }
