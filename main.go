@@ -15,7 +15,7 @@ var (
 	ec2_svc *ec2.EC2
 )
 
-func getInstancesByTag() {
+func getInstancesByTag() string {
 	res, err := ec2_svc.DescribeInstances(&ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
 			&ec2.Filter{
@@ -28,8 +28,10 @@ func getInstancesByTag() {
 	})
 
 	if err != nil {
-		fmt.Println(err)
+		return err.Error()
 	}
+
+	errorSnapshotStrings := ""
 
 	for _, i := range res.Reservations {
 		var nt string
@@ -42,14 +44,22 @@ func getInstancesByTag() {
 		fmt.Println(nt, *i.Instances[0].InstanceId, *i.Instances[0].State.Name)
 		if *i.Instances[0].State.Name == "running" {
 			for _, blockDevice := range i.Instances[0].BlockDeviceMappings {
-				createSnapShot(nt, *blockDevice.Ebs.VolumeId, *i.Instances[0].InstanceId, *i.Instances[0].VpcId)
+				errorSnapshot := createSnapShot(nt, *blockDevice.Ebs.VolumeId, *i.Instances[0].InstanceId, *i.Instances[0].VpcId)
+				if errorSnapshot != nil {
+					errorSnapshotStrings = strings.Join([]string{errorSnapshotStrings, errorSnapshot.Error()}, "\n")
+				}
 			}
 		}
 	}
 
+	if errorSnapshotStrings != "" {
+		return errorSnapshotStrings
+	}
+
+	return ""
 }
 
-func createSnapShot(nt string, v string, in string, vpc string) {
+func createSnapShot(nt string, v string, in string, vpc string) error {
 
 	s, err := ec2_svc.CreateSnapshot(&ec2.CreateSnapshotInput{
 		Description: aws.String(strings.Join([]string{"Created by Snapper for volume id:", v, "instance id:", in, "vpc id:", vpc}, " ")),
@@ -68,12 +78,13 @@ func createSnapShot(nt string, v string, in string, vpc string) {
 	})
 
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
 
 	fmt.Printf("Creating snapshot for %s...\n", nt)
 	fmt.Println(s)
 
+	return nil
 }
 
 func aws_initiate() error {
@@ -100,13 +111,20 @@ func start(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 		}, aws_err
 	}
 
-	getInstancesByTag()
+	errorString := getInstancesByTag()
+	if errorString != "" {
+		response, _ := json.Marshal(errorString)
+		return events.APIGatewayProxyResponse{
+			Body:       string(response),
+			StatusCode: 500,
+		}, nil
+	}
 
 	response, _ := json.Marshal("Return 200.")
 	return events.APIGatewayProxyResponse{
 		Body:       string(response),
 		StatusCode: 200,
-	}, aws_err
+	}, nil
 
 }
 
