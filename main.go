@@ -8,7 +8,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -20,27 +22,49 @@ type SnapperInput struct {
 	Keep   string `json:"keep"`
 }
 
-func deleteInstanceSnapshots() string {
+func deleteInstanceSnapshots(k string) string {
+
+	keep, _ := strconv.ParseFloat(k, 64)
+	errorSnapshotStrings := ""
+
 	res, err := getInstances()
 	if err != nil {
 		return "Error getting instances with the Snapper: create tags!"
 	}
 
 	for _, i := range res.Reservations {
-		var nt string
-		fmt.Println(nt, *i.Instances[0].InstanceId, *i.Instances[0].State.Name)
 		if *i.Instances[0].State.Name == "running" {
 			for _, blockDevice := range i.Instances[0].BlockDeviceMappings {
-				// errorDeleteSnapshot := deleteSnapshot(*blockDevice.Ebs.VolumeId)
-				getSnapshots(blockDevice.Ebs.VolumeId)
+				snapshots := getSnapshots(blockDevice.Ebs.VolumeId)
+				for _, snap := range snapshots {
+					fmt.Printf("VolumeId: %v\nVolumeSize: %vGB\nSnapshotId: %v\nStartTime: %v\n", *snap.VolumeId, *snap.VolumeSize, *snap.SnapshotId, *snap.StartTime)
+					fmt.Printf("Time Now: %v\nTime Snapshot: %v\nTime Difference: %v\n\n", time.Now().UTC(), *snap.StartTime, time.Now().UTC().Sub(*snap.StartTime).Hours())
+					if time.Now().UTC().Sub(*snap.StartTime).Hours() > keep*24 {
+						errorSnapshot := deleteSnapshot(snap.SnapshotId)
+						if errorSnapshot != nil {
+							errorSnapshotStrings = strings.Join([]string{errorSnapshotStrings, errorSnapshot.Error()}, "\n")
+						}
+					}
+				}
 			}
 		}
 	}
 
-	return ""
+	return errorSnapshotStrings
 }
 
-func getSnapshots(v *string) {
+func deleteSnapshot(s *string) error {
+	_, err := ec2_svc.DeleteSnapshot(&ec2.DeleteSnapshotInput{
+		SnapshotId: s,
+	})
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Snapshot marked for deletion: %v\n\n", *s)
+	return nil
+}
+
+func getSnapshots(v *string) []*ec2.Snapshot {
 	snapshots, err := ec2_svc.DescribeSnapshots(&ec2.DescribeSnapshotsInput{
 		Filters: []*ec2.Filter{
 			&ec2.Filter{
@@ -60,10 +84,8 @@ func getSnapshots(v *string) {
 	if err != nil {
 		fmt.Printf("%v", err)
 	}
-	for _, snap := range snapshots.Snapshots {
-		fmt.Printf("VolumeId: %v\nVolumeSize: %vGB\nSnapshotId: %v\nStartTime: %v\n\n", *snap.VolumeId, *snap.VolumeSize, *snap.SnapshotId, *snap.StartTime)
-	}
-	// fmt.Printf("%#v\n\n", snapshots)
+
+	return snapshots.Snapshots
 }
 
 func createInstanceSnapshots() string {
@@ -94,11 +116,7 @@ func createInstanceSnapshots() string {
 		}
 	}
 
-	if errorSnapshotStrings != "" {
-		return errorSnapshotStrings
-	}
-
-	return ""
+	return errorSnapshotStrings
 }
 
 func createSnapshot(nt string, v string, in string, vpc string) error {
@@ -174,8 +192,7 @@ func HandleRequest(ctx context.Context, input SnapperInput) (string, error) {
 	fmt.Printf("Request: %#v\n", input)
 
 	if input.Option == "delete" {
-		// return "Deletion of snapshots completed.", nil
-		errorStringDeleteSnapshots := deleteInstanceSnapshots()
+		errorStringDeleteSnapshots := deleteInstanceSnapshots(input.Keep)
 		if errorStringDeleteSnapshots != "" {
 			return errorStringDeleteSnapshots, errors.New("Snapshots cannot be deleted!")
 		}
