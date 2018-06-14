@@ -4,8 +4,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: My first serverless application.
 
 Resources:
-
-  Products:
+  Snapper:
     Type: AWS::Serverless::Function
     Properties:
       Timeout: 20
