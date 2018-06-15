@@ -7,6 +7,16 @@
 - [SAM CLI](https://github.com/awslabs/aws-sam-cli) (For packaging this
   lambda application).
 
+This application can be developed in **Docker** (See _Dockerfile_) without having
+the above pre-requisites installed (All the tools are packaged in the docker
+image).
+
+```bash
+docker build -t halosan/snapper-dev:latest .
+docker run --rm -it -v $(pwd):/go/src/app -v $HOME/.aws:/home/1000/.aws
+halosan/snapper-dev:latest bash
+```
+
 1. Install dependencies:
 
     ```bash
