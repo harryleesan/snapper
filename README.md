@@ -13,9 +13,11 @@ image).
 
 ```bash
 docker build -t halosan/snapper-dev:latest .
-docker run --rm -it -v $(pwd):/go/src/app -v $HOME/.aws:/home/1000/.aws
-halosan/snapper-dev:latest bash
+docker run --rm -it -v $(pwd):/go/src/app -v $HOME/.aws:/home/1000/.aws halosan/snapper-dev:latest bash
 ```
+
+(It is recommended to develop in the provided docker container, this ensures that
+you don't have version issues.)
 
 1. Install dependencies:
 
