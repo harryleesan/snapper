@@ -6,7 +6,7 @@ that are over a specific age.
 
 ### How it works
 This **Go** application is deployed as a _AWS Lambda_ function which when called
-checks **all** _ AWS EC2_ instances for the _Snapper_ tag. It then creates (or deletes
+checks **all** _AWS EC2_ instances for the _Snapper_ tag. It then creates (or deletes
 _AWS EBS_ snapshots) depending on the input. This _Lambda_ function is called
 via _AWS CloudWatch_ scheduled events.
 
@@ -16,8 +16,14 @@ below.
 ## Usage
 
 To enable this functionality, tag the EC2 instances with the Key _Snapper_ and
-the Value with the number of days that you want the snapshots to exist. e.g
-Snapper: 7.
+the Value with the number of days that you want the snapshots to exist.
+
+```json
+{
+  "Key": "Snapper",
+  "Value": "7"
+}
+```
 
 ### Pre-requisites
 - **Go** (Of course)
@@ -53,8 +59,8 @@ you don't have version issues.)
    this will also update the `snapper-serverless.yaml` file):
 
     ```bash
-    sam package --template-file ./template.yaml --output-template-file \
-    snapper-serverless.yaml --s3-bucket vatit-lambdas --s3-prefix snapper-go
+    sam package --template-file ./template.yaml --output-template-file snapper-serverless.yaml \
+    --s3-bucket vatit-lambdas --s3-prefix snapper-go
     ```
 
 4. To deploy the Lambda function through your own CloudFormation stack:
