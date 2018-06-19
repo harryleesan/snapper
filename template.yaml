@@ -17,21 +17,19 @@ Resources:
         Variables:
           OPTION: create
       Events:
-        CreateSnapshot:
+        CreateSnapshots:
           Type: Schedule
           Properties:
             Schedule: cron(0 2 ? * MON-FRI *)
             Input: |
               {
-                "option": "create",
-                "keep": ""
+                "option": "create"
               }
-        DeleteSnapshot7Days:
+        DeleteSnapshots:
           Type: Schedule
           Properties:
             Schedule: cron(0 2 ? * MON-FRI *)
             Input: |
               {
-                "option": "delete",
-                "keep": "7"
+                "option": "delete"
               }

@@ -3,20 +3,20 @@ Description: Snapper Go application to take snapshot of volumes.
 Resources:
   Snapper:
     Properties:
-      CodeUri: s3://vatit-lambdas/a2d96725b092db59f113ece941f2c3dd
+      CodeUri: s3://vatit-lambdas/snapper-go/ce8a99aa5a3b186ec5514748e9f6f62a
       Description: Takes snapshots of instance volumes.
       Environment:
         Variables:
           OPTION: create
       Events:
-        CreateSnapshot:
+        CreateSnapshots:
           Properties:
-            Input: "{\n  \"option\": \"create\",\n  \"keep\": \"\"\n}\n"
+            Input: "{\n  \"option\": \"create\"\n}\n"
             Schedule: cron(0 2 ? * MON-FRI *)
           Type: Schedule
-        DeleteSnapshot7Days:
+        DeleteSnapshots:
           Properties:
-            Input: "{\n  \"option\": \"delete\",\n  \"keep\": \"7\"\n}\n"
+            Input: "{\n  \"option\": \"delete\"\n}\n"
             Schedule: cron(0 2 ? * MON-FRI *)
           Type: Schedule
       FunctionName: snapper-go

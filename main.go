@@ -19,12 +19,10 @@ var (
 
 type SnapperInput struct {
 	Option string `json:"option"`
-	Keep   string `json:"keep"`
 }
 
-func deleteInstanceSnapshots(k string) string {
+func deleteInstanceSnapshots() string {
 
-	keep, _ := strconv.ParseFloat(k, 64)
 	errorSnapshotStrings := ""
 
 	res, err := getInstances()
@@ -34,12 +32,22 @@ func deleteInstanceSnapshots(k string) string {
 
 	for _, i := range res.Reservations {
 		if *i.Instances[0].State.Name == "running" {
+			keep := ""
+			for _, a := range i.Instances[0].Tags {
+				if *a.Key == "Snapper" {
+					keep = *a.Value
+				}
+			}
+			if keep == "" {
+				keep = "7"
+			}
+			keepInt, _ := strconv.ParseFloat(keep, 64)
 			for _, blockDevice := range i.Instances[0].BlockDeviceMappings {
 				snapshots := getSnapshots(blockDevice.Ebs.VolumeId)
 				for _, snap := range snapshots {
-					fmt.Printf("VolumeId: %v\nVolumeSize: %vGB\nSnapshotId: %v\nStartTime: %v\n", *snap.VolumeId, *snap.VolumeSize, *snap.SnapshotId, *snap.StartTime)
-					fmt.Printf("Time Now: %v\nTime Snapshot: %v\nTime Difference: %v\n\n", time.Now().UTC(), *snap.StartTime, time.Now().UTC().Sub(*snap.StartTime).Hours())
-					if time.Now().UTC().Sub(*snap.StartTime).Hours() > keep*24 {
+					fmt.Printf("VolumeId: %v\nVolumeSize: %vGB\nSnapshotId: %v\nStartTime: %v\nKeepDays: %v (%v Hours)\n", *snap.VolumeId, *snap.VolumeSize, *snap.SnapshotId, *snap.StartTime, keepInt, keepInt*24)
+					fmt.Printf("Time Now: %v\nTime Snapshot: %v\nTime Difference Hours: %v\n\n", time.Now().UTC(), *snap.StartTime, time.Now().UTC().Sub(*snap.StartTime).Hours())
+					if time.Now().UTC().Sub(*snap.StartTime).Hours() > keepInt*24 {
 						errorSnapshot := deleteSnapshot(snap.SnapshotId)
 						if errorSnapshot != nil {
 							errorSnapshotStrings = strings.Join([]string{errorSnapshotStrings, errorSnapshot.Error()}, "\n")
@@ -156,7 +164,7 @@ func getInstances() (*ec2.DescribeInstancesOutput, error) {
 			&ec2.Filter{
 				Name: aws.String("tag:Snapper"),
 				Values: []*string{
-					aws.String("create"),
+					aws.String("*"),
 				},
 			},
 		},
@@ -192,7 +200,7 @@ func HandleRequest(ctx context.Context, input SnapperInput) (string, error) {
 	fmt.Printf("Request: %#v\n", input)
 
 	if input.Option == "delete" {
-		errorStringDeleteSnapshots := deleteInstanceSnapshots(input.Keep)
+		errorStringDeleteSnapshots := deleteInstanceSnapshots()
 		if errorStringDeleteSnapshots != "" {
 			return errorStringDeleteSnapshots, errors.New("Snapshots cannot be deleted!")
 		}
