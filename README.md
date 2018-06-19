@@ -1,12 +1,12 @@
 ## Introduction
 
-**Snapper-go** is a simple snapshot helper that takes snapshots of EBS volumes
+**Snapper** is a simple snapshot helper that takes snapshots of EBS volumes
 of tagged instances on a cron schedule. This application also removes snapshots
 that are over a specific age.
 
 ### How it works
-This **Go** application is deployed as a _AWS Lambda_ function which when called
-checks **all** _AWS EC2_ instances for the _Snapper_ tag. It then creates (or deletes
+This **Go** application is deployed as a _AWS Lambda_ function which when
+called, checks **all** _AWS EC2_ instances for the _Snapper_ tag. It then creates (or deletes
 _AWS EBS_ snapshots) depending on the input. This _Lambda_ function is called
 via _AWS CloudWatch_ scheduled events.
 
