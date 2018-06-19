@@ -44,6 +44,7 @@ docker run --rm -it -v $(pwd):/go/src/app -v $HOME/.aws:/home/1000/.aws halosan/
 (It is recommended to develop in the provided docker container, this ensures that
 you don't have version issues.)
 
+> NOTE!
 > Ensure that your AWS lambda function has the permission to access your EC2
 > instances and create snapshots. This can be done by attaching your Lambda
 > function to a _role_. An example policy for this role can be found in
